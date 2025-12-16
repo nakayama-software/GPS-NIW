@@ -1,0 +1,19 @@
+{
+  "name": "gps",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server_ws.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon server_ws.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^5.2.1",
+    "mysql2": "^3.15.3",
+    "nodemon": "^3.1.11",
+    "serialport": "^13.0.0",
+    "ws": "^8.18.3"
+  }
+}

@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time GPS Tracker</title>
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f0f2f5;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 20px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+
+        #map {
+            height: calc(100vh - 60px);
+            width: 100%;
+        }
+
+        .custom-marker {
+            background: none !important;
+            border: none !important;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>🛰️ Real-Time GPS Tracker</h1>
+    </div>
+
+    <div id="map"></div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+        // Initialize map
+        const map = L.map('map').setView([33.2109, 130.0459], 15);
+
+        // Add OpenStreetMap tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 19
+        }).addTo(map);
+
+        // Color palette for different nodes
+        const nodeColors = [
+            '#667eea', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6',
+            '#ec4899', '#14b8a6', '#f97316', '#06b6d4', '#84cc16'
+        ];
+
+        // Store node data
+        const nodes = {};
+        let nodeIdList = [22]; // Add your node IDs here
+
+        // Create custom icon with node ID inside
+        function createCustomIcon(nodeId, color) {
+            return L.divIcon({
+                className: 'custom-marker',
+                html: `<div style="
+                    background: ${color};
+                    width: 40px;
+                    height: 40px;
+                    border-radius: 50%;
+                    border: 3px solid white;
+                    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: white;
+                    font-weight: bold;
+                    font-size: 14px;
+                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                ">${nodeId}</div>`,
+                iconSize: [40, 40],
+                iconAnchor: [20, 20]
+            });
+        }
+
+        // Initialize nodes
+        function initializeNodes() {
+            nodeIdList.forEach((nodeId, index) => {
+                const color = nodeColors[index % nodeColors.length];
+                
+                nodes[nodeId] = {
+                    marker: null,
+                    polyline: null,
+                    coordinates: [],
+                    color: color
+                };
+            });
+        }
+
+        // Update node data on map
+        function updateNode(nodeId, data) {
+            if (!nodes[nodeId]) return;
+
+            const { latitude, longitude, timestamp } = data;
+            const node = nodes[nodeId];
+
+            // Add coordinate to path
+            node.coordinates.push([latitude, longitude]);
+
+            // Update or create marker
+            if (node.marker) {
+                node.marker.setLatLng([latitude, longitude]);
+            } else {
+                const icon = createCustomIcon(nodeId, node.color);
+                node.marker = L.marker([latitude, longitude], { icon: icon }).addTo(map);
+                node.marker.bindPopup(`
+                    <b>Node ${nodeId}</b><br>
+                    Lat: ${latitude.toFixed(6)}<br>
+                    Lng: ${longitude.toFixed(6)}<br>
+                    <small>${new Date(timestamp).toLocaleString()}</small>
+                `);
+                
+                // Center map on first marker
+                if (nodeIdList.length === 1 || Object.values(nodes).filter(n => n.marker).length === 1) {
+                    map.setView([latitude, longitude], 15);
+                }
+            }
+
+            // Update or create path
+            if (node.polyline) {
+                node.polyline.setLatLngs(node.coordinates);
+            } else {
+                node.polyline = L.polyline(node.coordinates, {
+                    color: node.color,
+                    weight: 3,
+                    opacity: 0.6,
+                    dashArray: '5, 5'
+                }).addTo(map);
+            }
+
+            // Update popup content
+            node.marker.getPopup().setContent(`
+                <b>Node ${nodeId}</b><br>
+                Lat: ${latitude.toFixed(6)}<br>
+                Lng: ${longitude.toFixed(6)}<br>
+                <small>${new Date(timestamp).toLocaleString()}</small>
+            `);
+        }
+
+        // Fetch data for a specific node
+        function fetchNodeData(nodeId) {
+            fetch(`/api/data/${nodeId}`)
+                .then(response => {
+                    if (!response.ok) throw new Error('Node not found');
+                    return response.json();
+                })
+                .then(data => {
+                    updateNode(nodeId, data);
+                })
+                .catch(error => {
+                    console.log(`No data for node ${nodeId}`);
+                });
+        }
+
+        // Fetch all nodes data
+        function fetchAllNodesData() {
+            nodeIdList.forEach(nodeId => {
+                fetchNodeData(nodeId);
+            });
+        }
+
+        // Initialize
+        initializeNodes();
+        fetchAllNodesData();
+
+        // Update every 1 second
+        setInterval(fetchAllNodesData, 1000);
+
+    </script>
+</body>
+
+</html>
