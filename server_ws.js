@@ -1,24 +1,13 @@
 const express = require('express');
 const http = require('http');
 const mysql = require('mysql2');
-const { SerialPort } = require('serialport');
-const path = require('path');
-const { ReadlineParser } = require('@serialport/parser-readline');
 
 const app = express();
 const server = http.createServer(app);
 
-// Middleware for json PARSE
 app.use(express.json());
 
-// CREATE TABLE gps_data (
-//   node_id INT PRIMARY KEY,
-//   latitude DOUBLE NOT NULL,
-//   longitude DOUBLE NOT NULL,
-//   timestamp DATETIME NOT NULL
-// );
-
-// database setup connection
+// DB connection
 const db = mysql.createConnection({
   host: 'localhost',
   user: 'root',
@@ -26,137 +15,151 @@ const db = mysql.createConnection({
   database: 'gps_niw'
 });
 
-// Check database connection
 db.connect((err) => {
   if (err) {
-    console.error('Error connecting to the database: ', err.stack);
+    console.error('DB connect error:', err.stack);
     return;
   }
   console.log('Connected to the database');
 });
 
-// ENDPOINT
+/**
+ * Helper: upsert heartbeat (latest only)
+ */
+function upsertHeartbeat(node_id, cb) {
+  const q = `
+    INSERT INTO node_status (node_id, last_seen)
+    VALUES (?, NOW())
+    ON DUPLICATE KEY UPDATE last_seen = NOW();
+  `;
+  db.query(q, [node_id], cb);
+}
+
+/**
+ * 1) GPS update (latest only) + update heartbeat
+ */
 app.post('/api/update', (req, res) => {
   const { node_id, latitude, longitude } = req.body;
 
-  if (!node_id || latitude === undefined || longitude === undefined) {
+  if (node_id === undefined || latitude === undefined || longitude === undefined) {
     return res.status(400).json({ error: 'Missing required fields (node_id, latitude, longitude)' });
   }
 
-  const query = `
-    REPLACE INTO gps_data (node_id, latitude, longitude, timestamp) 
-    VALUES (?, ?, ?, ?)`;
+  const qGps = `
+    INSERT INTO gps_data (node_id, latitude, longitude, \`timestamp\`)
+    VALUES (?, ?, ?, NOW())
+    ON DUPLICATE KEY UPDATE
+      latitude = VALUES(latitude),
+      longitude = VALUES(longitude),
+      \`timestamp\` = VALUES(\`timestamp\`);
+  `;
 
-  const timestamp = new Date().toISOString();
-
-  db.query(query, [node_id, latitude, longitude, timestamp], (err, result) => {
+  db.query(qGps, [node_id, latitude, longitude], (err) => {
     if (err) {
-      console.error('Error executing query: ', err.stack);
-      return res.status(500).json({ error: 'Failed to update data' });
+      console.error('DB gps_data error:', err.stack);
+      return res.status(500).json({ error: 'Failed to update gps_data' });
     }
 
-    console.log(`Data updated for node ${node_id}: Latitude ${latitude}, Longitude ${longitude}`);
-    res.json({ message: 'Data updated successfully', data: { node_id, latitude, longitude, timestamp } });
+    // Sekalian update last_seen (anggap GPS update = node alive)
+    upsertHeartbeat(node_id, (err2) => {
+      if (err2) {
+        console.error('DB node_status error:', err2.stack);
+        // GPS sudah tersimpan; heartbeat gagal -> tetap balas ok, tapi kasih warning
+        return res.json({ ok: true, warning: 'gps updated but heartbeat failed' });
+      }
+      res.json({ ok: true });
+    });
   });
 });
 
+/**
+ * 2) Heartbeat only (no GPS)
+ */
+app.post('/api/heartbeat', (req, res) => {
+  const { node_id } = req.body;
+
+  if (node_id === undefined) {
+    return res.status(400).json({ error: 'Missing required field (node_id)' });
+  }
+
+  upsertHeartbeat(node_id, (err) => {
+    if (err) {
+      console.error('DB node_status error:', err.stack);
+      return res.status(500).json({ error: 'Failed to update node_status' });
+    }
+    res.json({ ok: true });
+  });
+});
+
+/**
+ * Get one GPS row
+ */
 app.get('/api/data/:node_id', (req, res) => {
   const node_id = req.params.node_id;
-
-  const query = 'SELECT * FROM gps_data WHERE node_id = ?';
-
-  db.query(query, [node_id], (err, results) => {
-    if (err) {
-      console.error('Error executing query: ', err.stack);
-      return res.status(500).json({ error: 'Failed to retrieve data' });
-    }
-
-    if (results.length === 0) {
-      return res.status(404).json({ error: `Data for node_id ${node_id} not found` });
-    }
-
-    const data = results[0];
-    res.json({ node_id, latitude: data.latitude, longitude: data.longitude, timestamp: data.timestamp });
+  db.query('SELECT * FROM gps_data WHERE node_id = ?', [node_id], (err, results) => {
+    if (err) return res.status(500).json({ error: 'Failed to retrieve data' });
+    if (!results.length) return res.status(404).json({ error: `node_id ${node_id} not found` });
+    res.json(results[0]);
   });
 });
 
+/**
+ * Get all GPS rows
+ */
 app.get('/api/data', (req, res) => {
-  const query = 'SELECT * FROM gps_data ORDER BY node_id';
-
-  db.query(query, (err, results) => {
-    if (err) {
-      console.error('Error executing query: ', err.stack);
-      return res.status(500).json({ error: 'Failed to retrieve data' });
-    }
-
+  db.query('SELECT * FROM gps_data ORDER BY node_id', (err, results) => {
+    if (err) return res.status(500).json({ error: 'Failed to retrieve data' });
     res.json({ count: results.length, data: results });
   });
 });
 
-// Serve static files (HTML, CSS, JS)
+/**
+ * (Opsional) cek node yang "online" dalam N detik terakhir
+ * contoh: /api/online?within=60
+ */
+app.get('/api/online', (req, res) => {
+  const within = parseInt(req.query.within ?? '60', 10); // detik
+  const q = `
+    SELECT node_id, last_seen
+    FROM node_status
+    WHERE last_seen >= (NOW() - INTERVAL ? SECOND)
+    ORDER BY node_id;
+  `;
+  db.query(q, [within], (err, results) => {
+    if (err) return res.status(500).json({ error: 'Failed to retrieve online nodes' });
+    res.json({ within_seconds: within, count: results.length, data: results });
+  });
+});
+
+app.get('/api/nodes', (req, res) => {
+  const within = parseInt(req.query.within ?? '60', 10); // detik online window
+
+  const q = `
+    SELECT
+      ns.node_id,
+      ns.last_seen,
+      gd.latitude,
+      gd.longitude,
+      gd.\`timestamp\` AS gps_timestamp,
+      (gd.node_id IS NOT NULL) AS has_gps,
+      (ns.last_seen >= (NOW() - INTERVAL ? SECOND)) AS online
+    FROM node_status ns
+    LEFT JOIN gps_data gd ON gd.node_id = ns.node_id
+    ORDER BY ns.node_id;
+  `;
+
+  db.query(q, [within], (err, rows) => {
+    if (err) {
+      console.error('DB /api/nodes error:', err.stack);
+      return res.status(500).json({ error: 'Failed to retrieve nodes' });
+    }
+    res.json({ within_seconds: within, count: rows.length, data: rows });
+  });
+});
+
 app.use(express.static('public'));
 
-// Start server
 const PORT = 8080;
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`Server started on http://localhost:${PORT}`);
 });
-
-// Serial Port Configuration
-const port = new SerialPort({ path: 'COM5', baudRate: 115200 });
-
-// Parser with newline delimiter
-const parser = port.pipe(new ReadlineParser({ delimiter: '\n' }));
-
-port.on('open', () => {
-  console.log("Serial port opened successfully");
-});
-
-port.on('error', (err) => {
-  console.error('Serial port error:', err);
-});
-
-// Process parsed lines
-parser.on('data', (line) => {
-  // Extract JSON from the line
-  // Format: "Received from 1082953869 msg={"node":22,"latitude":33.210873833,"longitude":130.045915667}"
-  const msgIndex = line.indexOf('msg=');
-  
-  if (msgIndex !== -1) {
-    const jsonString = line.substring(msgIndex + 4).trim();
-    
-    try {
-      const jsonData = JSON.parse(jsonString);
-      
-      // Check if it's GPS data (has node, latitude, longitude)
-      if (jsonData.node && jsonData.latitude !== undefined && jsonData.longitude !== undefined) {
-        console.log('GPS Data received:', jsonData);
-        updateNodeData(jsonData.node, jsonData.latitude, jsonData.longitude);
-      } else if (jsonData.status) {
-        // This is status data from extender
-        console.log('Status message:', jsonData.status);
-      }
-    } catch (err) {
-      console.error('Error parsing JSON:', err);
-      console.error('Problematic string:', jsonString);
-    }
-  }
-});
-
-// Update data based on ID function
-function updateNodeData(node_id, latitude, longitude) {
-  const query = `
-    REPLACE INTO gps_data (node_id, latitude, longitude, timestamp) 
-    VALUES (?, ?, ?, ?)`;
-
-  const timestamp = new Date().toISOString();
-
-  db.query(query, [node_id, latitude, longitude, timestamp], (err, result) => {
-    if (err) {
-      console.error('Error updating database:', err.stack);
-      return;
-    }
-
-    console.log(`✓ Node ${node_id} updated - Lat: ${latitude}, Lng: ${longitude}`);
-  });
-}

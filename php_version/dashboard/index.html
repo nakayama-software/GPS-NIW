@@ -12,14 +12,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
 
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
-    html,
-    body {
+    html, body {
       height: 100%;
       overflow: hidden;
     }
@@ -32,49 +27,53 @@
       color: #333;
     }
 
-    .main-content {
-      flex: 1;
+    .header {
+      background: linear-gradient(135deg, #2c5282 0%, #1a365d 100%);
+      color: white;
+      padding: 14px 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      flex-shrink: 0;
+      position: relative;
+      z-index: 1000;
+      border-bottom: 3px solid #2b6cb0;
+    }
+
+    .header-content {
       display: flex;
-      flex-direction: column;
-      overflow: hidden;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      max-width: 1400px;
+      margin: 0 auto;
     }
 
-    .mobile-header {
-      display: none;
+    .header h1 { 
+      font-size: clamp(14px, 4vw, 17px);
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
-
-
 
     .toggle-panel {
-      background: rgba(44, 82, 130, 0.95);
-      border: 1.5px solid rgba(255, 255, 255, 0.3);
+      background: rgba(255,255,255,0.15);
+      border: 1.5px solid rgba(255,255,255,0.3);
       color: white;
-      padding: clamp(8px, 2vw, 10px) clamp(14px, 4vw, 18px);
-      border-radius: 8px;
+      padding: clamp(6px, 2vw, 8px) clamp(14px, 4vw, 18px);
+      border-radius: 6px;
       cursor: pointer;
       font-size: clamp(11px, 3vw, 13px);
       font-weight: 600;
       transition: all 0.2s;
-      display: block;
+      display: none;
       letter-spacing: 0.03em;
       white-space: nowrap;
-      position: fixed;
-      top: 12px;
-      right: 12px;
-      z-index: 1000;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-      backdrop-filter: blur(10px);
-    }
-
-    .toggle-panel:hover {
-      background: rgba(44, 82, 130, 1);
-      transform: translateY(-1px);
-      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
     }
 
     .toggle-panel:active {
       transform: scale(0.95);
-      background: rgba(255, 255, 255, 0.25);
+      background: rgba(255,255,255,0.25);
     }
 
     #map {
@@ -88,7 +87,7 @@
     .bottom-panel {
       background: white;
       border-top: 2px solid #e2e8f0;
-      box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.06);
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.06);
       overflow: hidden;
       flex-shrink: 0;
       transition: all 0.3s ease;
@@ -128,28 +127,6 @@
       letter-spacing: 0.02em;
     }
 
-    .header-content {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      max-width: 1400px;
-      margin: 0 auto;
-      position: absolute;
-      bottom: 0;
-
-      font-size: 12px;
-    }
-
-    .header h1 {
-      font-size: clamp(14px, 4vw, 17px);
-      font-weight: 700;
-      letter-spacing: 0.05em;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
     .badges {
       display: flex;
       gap: clamp(5px, 1.5vw, 7px);
@@ -168,20 +145,19 @@
       letter-spacing: 0.02em;
     }
 
-    .badge.warn {
-      background: #fffbeb;
-      color: #78350f;
+    .badge.warn { 
+      background: #fffbeb; 
+      color: #78350f; 
       border-color: #fde68a;
     }
-
-    .badge.ok {
-      background: #ecfdf5;
-      color: #065f46;
+    
+    .badge.ok { 
+      background: #ecfdf5; 
+      color: #065f46; 
       border-color: #6ee7b7;
     }
 
     .panel-content {
-      position: relative;
       overflow-y: auto;
       flex: 1;
       min-height: 0;
@@ -210,7 +186,7 @@
       padding: clamp(12px, 3vw, 16px);
       font-size: clamp(12px, 3vw, 13px);
       line-height: 1.7;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
       transition: all 0.2s;
       position: relative;
     }
@@ -232,7 +208,7 @@
 
     .card:active {
       transform: translateY(1px);
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
     }
 
     .card-header {
@@ -304,7 +280,7 @@
       font-size: clamp(11px, 2.8vw, 13px);
     }
 
-    .mono {
+    .mono { 
       font-family: 'SF Mono', Monaco, 'Cascadia Code', Consolas, monospace;
       font-size: 11px;
       background: #f7fafc;
@@ -342,204 +318,62 @@
       border: 1px solid #bfdbfe;
     }
 
-    .custom-marker {
-      background: none !important;
-      border: none !important;
+    .custom-marker { 
+      background: none !important; 
+      border: none !important; 
     }
 
     .time-ago {
       color: #64748b;
-      font-size: clamp(10px, 2.5vw, 11px);
+      font-size: 11px;
       font-weight: 500;
     }
 
     /* Tablet and Desktop */
     @media (min-width: 768px) {
-      .header {
-        display: block;
-      }
-
-      .toggle-panel {
-        display: none !important;
-      }
-
-      .main-content {
-        flex-direction: row;
-      }
-
+      .header h1 { font-size: 18px; }
+      
+      .toggle-panel { display: none !important; }
+      
       .bottom-panel {
-        max-height: none;
-        width: 20%;
-        min-width: 280px;
-        max-width: 350px;
-        border-top: none;
-        border-right: 2px solid #e2e8f0;
-        box-shadow: 2px 0 12px rgba(0, 0, 0, 0.06);
-        order: -1;
+        max-height: 300px;
       }
 
       .bottom-panel.collapsed {
-        max-height: none;
-        width: 20%;
-      }
-
-      #map {
-        flex: 1;
-        width: auto;
-      }
-
-      .panel-header {
-        padding: 16px 18px;
-      }
-
-      .panel-title {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 10px;
-      }
-
-      .badges {
-        width: 100%;
-        justify-content: flex-start;
+        max-height: 300px;
       }
 
       .list {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-        padding: 14px;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+        gap: 14px;
+        padding: 18px;
       }
 
       .card {
-        padding: 14px;
-        font-size: 12px;
+        padding: 18px;
       }
 
       .badge {
-        font-size: 11px;
-        padding: 5px 11px;
+        font-size: 12px;
+        padding: 6px 14px;
       }
 
       .card-row {
-        grid-template-columns: 95px 1fr;
-        font-size: 12px;
-        gap: 8px;
-      }
-
-      .card-label,
-      .card-value {
-        font-size: 12px;
-      }
-
-      .card-title {
-        font-size: 14px;
-      }
-
-      .status-badge {
-        font-size: 10px;
-        padding: 3px 8px;
-      }
-
-      .panel-heading {
-        font-size: 14px;
-      }
-
-      .warning-text,
-      .gps-coords {
-        font-size: 11px;
-      }
-
-      .time-ago {
-        font-size: 10px;
-      }
-
-      .mono {
-        font-size: 10px;
-      }
-
-      .card-header {
-        margin-bottom: 10px;
-        padding-bottom: 8px;
+        grid-template-columns: 120px 1fr;
       }
     }
 
     @media (min-width: 1024px) {
-      .header h1 {
-        font-size: 20px;
-      }
-
-      .bottom-panel {
-        width: 22%;
-        min-width: 320px;
-        max-width: 400px;
-      }
-
-      .card {
-        padding: 16px;
-        font-size: 13px;
-      }
-
-      .card-title {
-        font-size: 15px;
-      }
-
-      .card-row {
-        grid-template-columns: 100px 1fr;
-        font-size: 13px;
-      }
-
-      .card-label,
-      .card-value {
-        font-size: 13px;
-      }
-
-      .panel-heading {
-        font-size: 15px;
-      }
-
-      .badge {
-        font-size: 12px;
-        padding: 5px 12px;
-      }
-
-      .status-badge {
-        font-size: 11px;
-        padding: 4px 9px;
-      }
-
-      .warning-text,
-      .gps-coords {
-        font-size: 12px;
-      }
-
-      .time-ago {
-        font-size: 11px;
-      }
-
-      .mono {
-        font-size: 11px;
-      }
-
       .list {
-        padding: 16px;
-        gap: 14px;
+        grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+        max-width: 1400px;
+        margin: 0 auto;
       }
     }
 
     /* Mobile specific */
     @media (max-width: 767px) {
-      .header {
-        display: none;
-      }
-
-      .mobile-header {
-        display: block;
-      }
-
-      .header-content {
-        display: none;
-      }
-
       .toggle-panel {
         display: block;
       }
@@ -551,10 +385,8 @@
 
     /* Small phones */
     @media (max-width: 375px) {
-      .header h1 {
-        font-size: 15px;
-      }
-
+      .header h1 { font-size: 15px; }
+      
       .badges {
         gap: 5px;
       }
@@ -582,7 +414,7 @@
     /* Leaflet customization */
     .leaflet-popup-content-wrapper {
       border-radius: 8px;
-      box-shadow: 0 3px 14px rgba(0, 0, 0, 0.15);
+      box-shadow: 0 3px 14px rgba(0,0,0,0.15);
       border: 2px solid #e2e8f0;
     }
 
@@ -605,20 +437,9 @@
     }
 
     @keyframes dots {
-
-      0%,
-      20% {
-        content: ".";
-      }
-
-      40% {
-        content: "..";
-      }
-
-      60%,
-      100% {
-        content: "...";
-      }
+      0%, 20% { content: "."; }
+      40% { content: ".."; }
+      60%, 100% { content: "..."; }
     }
 
     /* Scrollbar styling */
@@ -642,52 +463,41 @@
 </head>
 
 <body>
-  <!-- <div class="header">
+  <div class="header">
     <div class="header-content">
       <h1>
         <span>📍</span>
         <span>リアルタイムGPSトラッカー</span>
       </h1>
+      <button class="toggle-panel" id="toggleBtn">
+        <span id="toggleText">パネルを隠す</span>
+      </button>
     </div>
-  </div> -->
-
-  <div class="mobile-header">
-    <button class="toggle-panel" id="toggleBtn">
-      <span id="toggleText">パネルを隠す</span>
-    </button>
   </div>
 
-  <div class="main-content">
-    <div id="map"></div>
+  <div id="map"></div>
 
-    <div class="bottom-panel" id="bottomPanel">
-      <div class="panel-header">
-        <div class="panel-title">
-          <div class="panel-heading">
-            <span>📊</span>
-            <span>ノードステータス</span>
-          </div>
-        </div>
-
-        <div class="badges">
-          <div class="badge ok" id="badgeOnline">オンライン: 0</div>
-          <div class="badge" id="badgeTotal">合計: 0</div>
-          <div class="badge warn" id="badgeNoGps">GPS無効: 0</div>
+  <div class="bottom-panel" id="bottomPanel">
+    <div class="panel-header">
+      <div class="panel-title">
+        <div class="panel-heading">
+          <span>📊</span>
+          <span>ノードステータス</span>
         </div>
       </div>
 
-      <div class="panel-content">
-        <div id="emptyState" class="empty-state">
-          <div class="loading">ノード情報を読み込み中</div>
-        </div>
-        <div class="list" id="statusList"></div>
-        <div class="header-content">
-          <h1>
-            <span>📍</span>
-            <span>リアルタイムGPSトラッカー</span>
-          </h1>
-        </div>
+      <div class="badges">
+        <div class="badge ok" id="badgeOnline">オンライン: 0</div>
+        <div class="badge" id="badgeTotal">合計: 0</div>
+        <div class="badge warn" id="badgeNoGps">GPS無効: 0</div>
       </div>
+    </div>
+
+    <div class="panel-content">
+      <div id="emptyState" class="empty-state">
+        <div class="loading">ノード情報を読み込み中</div>
+      </div>
+      <div class="list" id="statusList"></div>
     </div>
   </div>
 
@@ -726,7 +536,7 @@
       panelVisible = !panelVisible;
       bottomPanel.classList.toggle('collapsed');
       toggleText.textContent = panelVisible ? 'パネルを隠す' : 'パネルを表示';
-
+      
       setTimeout(() => {
         map.invalidateSize();
       }, 300);
@@ -823,7 +633,7 @@
 
         const listEl = document.getElementById('statusList');
         const emptyEl = document.getElementById('emptyState');
-
+        
         listEl.innerHTML = '';
 
         let total = payload.count || 0;
@@ -860,7 +670,7 @@
 
             const card = document.createElement('div');
             card.className = `card ${online ? 'online' : ''}`;
-
+            
             let warningHtml = '';
             if (!hasGps) {
               warningHtml = '<div class="warning-box"><span>⚠️</span><span class="warning-text">GPS信号を受信していません</span></div>';
@@ -908,7 +718,7 @@
               
               ${warningHtml}
             `;
-
+            
             listEl.appendChild(card);
 
             if (hasGps) {
@@ -953,7 +763,7 @@
     window.addEventListener('resize', () => {
       setTimeout(() => map.invalidateSize(), 150);
     });
-
+    
     setTimeout(() => map.invalidateSize(), 300);
   </script>
 </body>
