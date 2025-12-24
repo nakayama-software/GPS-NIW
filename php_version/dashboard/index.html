@@ -10,456 +10,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
 
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
 
-    html, body {
-      height: 100%;
-      overflow: hidden;
-    }
-
-    body {
-      font-family: 'Noto Sans JP', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;
-      background: #fafafa;
-      display: flex;
-      flex-direction: column;
-      color: #333;
-    }
-
-    .header {
-      background: linear-gradient(135deg, #2c5282 0%, #1a365d 100%);
-      color: white;
-      padding: 14px 20px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-      flex-shrink: 0;
-      position: relative;
-      z-index: 1000;
-      border-bottom: 3px solid #2b6cb0;
-    }
-
-    .header-content {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      max-width: 1400px;
-      margin: 0 auto;
-    }
-
-    .header h1 { 
-      font-size: clamp(14px, 4vw, 17px);
-      font-weight: 700;
-      letter-spacing: 0.05em;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .toggle-panel {
-      background: rgba(255,255,255,0.15);
-      border: 1.5px solid rgba(255,255,255,0.3);
-      color: white;
-      padding: clamp(6px, 2vw, 8px) clamp(14px, 4vw, 18px);
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: clamp(11px, 3vw, 13px);
-      font-weight: 600;
-      transition: all 0.2s;
-      display: none;
-      letter-spacing: 0.03em;
-      white-space: nowrap;
-    }
-
-    .toggle-panel:active {
-      transform: scale(0.95);
-      background: rgba(255,255,255,0.25);
-    }
-
-    #map {
-      flex: 1;
-      width: 100%;
-      min-height: 0;
-      position: relative;
-      background: #f0f4f8;
-    }
-
-    .bottom-panel {
-      background: white;
-      border-top: 2px solid #e2e8f0;
-      box-shadow: 0 -4px 20px rgba(0,0,0,0.06);
-      overflow: hidden;
-      flex-shrink: 0;
-      transition: all 0.3s ease;
-      max-height: 45vh;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .bottom-panel.collapsed {
-      max-height: 0;
-      border-top: none;
-      box-shadow: none;
-    }
-
-    .panel-header {
-      padding: 14px 20px;
-      border-bottom: 2px solid #f1f5f9;
-      flex-shrink: 0;
-      background: linear-gradient(to bottom, #ffffff 0%, #f8fafc 100%);
-    }
-
-    .panel-title {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      margin-bottom: 12px;
-    }
-
-    .panel-heading {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-weight: 700;
-      font-size: clamp(13px, 3.5vw, 15px);
-      color: #1a202c;
-      letter-spacing: 0.02em;
-    }
-
-    .badges {
-      display: flex;
-      gap: clamp(5px, 1.5vw, 7px);
-      flex-wrap: wrap;
-    }
-
-    .badge {
-      font-size: clamp(10px, 2.5vw, 11px);
-      padding: clamp(4px, 1vw, 5px) clamp(10px, 2.5vw, 12px);
-      border-radius: 4px;
-      background: #f7fafc;
-      color: #4a5568;
-      border: 1.5px solid #e2e8f0;
-      white-space: nowrap;
-      font-weight: 700;
-      letter-spacing: 0.02em;
-    }
-
-    .badge.warn { 
-      background: #fffbeb; 
-      color: #78350f; 
-      border-color: #fde68a;
-    }
-    
-    .badge.ok { 
-      background: #ecfdf5; 
-      color: #065f46; 
-      border-color: #6ee7b7;
-    }
-
-    .panel-content {
-      overflow-y: auto;
-      flex: 1;
-      min-height: 0;
-      -webkit-overflow-scrolling: touch;
-      background: #fafafa;
-    }
-
-    .empty-state {
-      padding: 40px 20px;
-      text-align: center;
-      color: #718096;
-      font-size: 14px;
-    }
-
-    .list {
-      padding: 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .card {
-      border: 2px solid #e2e8f0;
-      background: #ffffff;
-      border-radius: 8px;
-      padding: clamp(12px, 3vw, 16px);
-      font-size: clamp(12px, 3vw, 13px);
-      line-height: 1.7;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-      transition: all 0.2s;
-      position: relative;
-    }
-
-    .card::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 4px;
-      height: 100%;
-      background: #cbd5e0;
-      border-radius: 8px 0 0 8px;
-    }
-
-    .card.online::before {
-      background: linear-gradient(180deg, #48bb78 0%, #38a169 100%);
-    }
-
-    .card:active {
-      transform: translateY(1px);
-      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-    }
-
-    .card-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 12px;
-      padding-bottom: 10px;
-      border-bottom: 2px solid #f7fafc;
-    }
-
-    .card-title {
-      font-size: clamp(14px, 3.5vw, 16px);
-      font-weight: 700;
-      color: #1a202c;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      letter-spacing: 0.02em;
-    }
-
-    .status-badge {
-      font-size: clamp(10px, 2.5vw, 11px);
-      padding: clamp(3px, 1vw, 4px) clamp(8px, 2vw, 10px);
-      border-radius: 4px;
-      font-weight: 700;
-      letter-spacing: 0.02em;
-      white-space: nowrap;
-    }
-
-    .status-online {
-      background: #d1fae5;
-      color: #065f46;
-      border: 1.5px solid #6ee7b7;
-    }
-
-    .status-offline {
-      background: #f1f5f9;
-      color: #475569;
-      border: 1.5px solid #cbd5e0;
-    }
-
-    .card-grid {
-      display: grid;
-      gap: 10px;
-    }
-
-    .card-row {
-      display: grid;
-      grid-template-columns: clamp(90px, 25vw, 110px) 1fr;
-      gap: clamp(8px, 2.5vw, 12px);
-      padding: clamp(5px, 1.5vw, 7px) 0;
-      font-size: clamp(12px, 3vw, 13px);
-      align-items: start;
-    }
-
-    .card-label {
-      color: #64748b;
-      font-weight: 600;
-      letter-spacing: 0.01em;
-      font-size: clamp(11px, 2.8vw, 13px);
-    }
-
-    .card-value {
-      color: #1a202c;
-      font-weight: 500;
-      text-align: right;
-      word-break: break-all;
-      font-size: clamp(11px, 2.8vw, 13px);
-    }
-
-    .mono { 
-      font-family: 'SF Mono', Monaco, 'Cascadia Code', Consolas, monospace;
-      font-size: 11px;
-      background: #f7fafc;
-      padding: 2px 6px;
-      border-radius: 3px;
-      border: 1px solid #e2e8f0;
-    }
-
-    .warning-box {
-      margin-top: 10px;
-      padding: 8px 12px;
-      background: #fffbeb;
-      border: 1.5px solid #fde68a;
-      border-radius: 6px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .warning-text {
-      color: #92400e;
-      font-weight: 600;
-      font-size: clamp(11px, 2.8vw, 12px);
-      letter-spacing: 0.01em;
-    }
-
-    .gps-coords {
-      color: #2563eb;
-      font-weight: 600;
-      font-size: clamp(11px, 2.8vw, 12px);
-      font-family: 'SF Mono', Monaco, Consolas, monospace;
-      background: #eff6ff;
-      padding: 3px 8px;
-      border-radius: 4px;
-      border: 1px solid #bfdbfe;
-    }
-
-    .custom-marker { 
-      background: none !important; 
-      border: none !important; 
-    }
-
-    .time-ago {
-      color: #64748b;
-      font-size: 11px;
-      font-weight: 500;
-    }
-
-    /* Tablet and Desktop */
-    @media (min-width: 768px) {
-      .header h1 { font-size: 18px; }
-      
-      .toggle-panel { display: none !important; }
-      
-      .bottom-panel {
-        max-height: 300px;
-      }
-
-      .bottom-panel.collapsed {
-        max-height: 300px;
-      }
-
-      .list {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-        gap: 14px;
-        padding: 18px;
-      }
-
-      .card {
-        padding: 18px;
-      }
-
-      .badge {
-        font-size: 12px;
-        padding: 6px 14px;
-      }
-
-      .card-row {
-        grid-template-columns: 120px 1fr;
-      }
-    }
-
-    @media (min-width: 1024px) {
-      .list {
-        grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
-        max-width: 1400px;
-        margin: 0 auto;
-      }
-    }
-
-    /* Mobile specific */
-    @media (max-width: 767px) {
-      .toggle-panel {
-        display: block;
-      }
-
-      .bottom-panel {
-        max-height: 50vh;
-      }
-    }
-
-    /* Small phones */
-    @media (max-width: 375px) {
-      .header h1 { font-size: 15px; }
-      
-      .badges {
-        gap: 5px;
-      }
-
-      .badge {
-        font-size: 10px;
-        padding: 4px 10px;
-      }
-
-      .card {
-        padding: 14px;
-        font-size: 12px;
-      }
-
-      .card-title {
-        font-size: 15px;
-      }
-
-      .card-row {
-        grid-template-columns: 90px 1fr;
-        gap: 10px;
-      }
-    }
-
-    /* Leaflet customization */
-    .leaflet-popup-content-wrapper {
-      border-radius: 8px;
-      box-shadow: 0 3px 14px rgba(0,0,0,0.15);
-      border: 2px solid #e2e8f0;
-    }
-
-    .leaflet-popup-content {
-      margin: 14px;
-      font-family: 'Noto Sans JP', sans-serif;
-    }
-
-    /* Loading state */
-    .loading {
-      padding: 20px;
-      text-align: center;
-      color: #718096;
-      font-weight: 500;
-    }
-
-    .loading::after {
-      content: "...";
-      animation: dots 1.5s steps(4, end) infinite;
-    }
-
-    @keyframes dots {
-      0%, 20% { content: "."; }
-      40% { content: ".."; }
-      60%, 100% { content: "..."; }
-    }
-
-    /* Scrollbar styling */
-    .panel-content::-webkit-scrollbar {
-      width: 8px;
-    }
-
-    .panel-content::-webkit-scrollbar-track {
-      background: #f1f5f9;
-    }
-
-    .panel-content::-webkit-scrollbar-thumb {
-      background: #cbd5e0;
-      border-radius: 4px;
-    }
-
-    .panel-content::-webkit-scrollbar-thumb:hover {
-      background: #94a3b8;
-    }
-  </style>
 </head>
 
 <body>
@@ -469,303 +22,88 @@
         <span>📍</span>
         <span>リアルタイムGPSトラッカー</span>
       </h1>
-      <button class="toggle-panel" id="toggleBtn">
-        <span id="toggleText">パネルを隠す</span>
-      </button>
     </div>
   </div>
 
-  <div id="map"></div>
+  <button class="toggle-panel" id="toggleBtn">
+    <span id="toggleText">パネルを隠す</span>
+  </button>
 
-  <div class="bottom-panel" id="bottomPanel">
-    <div class="panel-header">
-      <div class="panel-title">
-        <div class="panel-heading">
-          <span>📊</span>
-          <span>ノードステータス</span>
+  <div class="area-controls">
+    <button class="area-btn" id="createAreaBtn">📍 エリア作成</button>
+    <button class="area-btn" id="finishAreaBtn" style="display:none;" disabled>✓ 完成</button>
+    <button class="area-btn" id="cancelAreaBtn" style="display:none;">✕ キャンセル</button>
+  </div>
+
+  <div class="area-modal" id="areaModal">
+    <div class="area-modal-content">
+      <h3>エリアを保存</h3>
+      <div class="area-form-group">
+        <label class="area-form-label">エリア名</label>
+        <input type="text" class="area-form-input" id="areaNameInput" placeholder="例: 配送エリアA">
+      </div>
+      <div class="area-form-group">
+        <label class="area-form-label">カラー</label>
+        <div class="area-color-picker" id="colorPicker">
+          <div class="area-color-option selected" data-color="#3b82f6" style="background:#3b82f6;"></div>
+          <div class="area-color-option" data-color="#10b981" style="background:#10b981;"></div>
+          <div class="area-color-option" data-color="#f59e0b" style="background:#f59e0b;"></div>
+          <div class="area-color-option" data-color="#ef4444" style="background:#ef4444;"></div>
+          <div class="area-color-option" data-color="#8b5cf6" style="background:#8b5cf6;"></div>
+          <div class="area-color-option" data-color="#ec4899" style="background:#ec4899;"></div>
+          <div class="area-color-option" data-color="#14b8a6" style="background:#14b8a6;"></div>
+          <div class="area-color-option" data-color="#f97316" style="background:#f97316;"></div>
+          <div class="area-color-option" data-color="#06b6d4" style="background:#06b6d4;"></div>
+          <div class="area-color-option" data-color="#84cc16" style="background:#84cc16;"></div>
+        </div>
+      </div>
+      <div class="area-modal-actions">
+        <button class="area-modal-btn secondary" id="modalCancelBtn">キャンセル</button>
+        <button class="area-modal-btn primary" id="modalSaveBtn">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="main-content">
+    <div class="bottom-panel" id="bottomPanel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <div class="panel-heading">
+            <span>📊</span>
+            <span>ノードステータス</span>
+          </div>
+        </div>
+
+        <div class="badges">
+          <div class="badge ok" id="badgeOnline">オンライン: 0</div>
+          <div class="badge" id="badgeTotal">合計: 0</div>
+          <div class="badge warn" id="badgeNoGps">GPS無効: 0</div>
+        </div>
+
+        <div class="area-list-section">
+          <div class="area-list-title">
+            <span>📌</span>
+            <span>保存エリア</span>
+          </div>
+          <div class="area-list" id="areaList">
+            <div style="font-size:11px;color:#94a3b8;text-align:center;padding:8px;">エリアがありません</div>
+          </div>
         </div>
       </div>
 
-      <div class="badges">
-        <div class="badge ok" id="badgeOnline">オンライン: 0</div>
-        <div class="badge" id="badgeTotal">合計: 0</div>
-        <div class="badge warn" id="badgeNoGps">GPS無効: 0</div>
+      <div class="panel-content">
+        <div id="emptyState" class="empty-state">
+          <div class="loading">ノード情報を読み込み中</div>
+        </div>
+        <div class="list" id="statusList"></div>
       </div>
     </div>
 
-    <div class="panel-content">
-      <div id="emptyState" class="empty-state">
-        <div class="loading">ノード情報を読み込み中</div>
-      </div>
-      <div class="list" id="statusList"></div>
-    </div>
+    <div id="map"></div>
   </div>
-
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="functions.js"></script>
 
-  <script>
-    // ===== Config =====
-    const ONLINE_WITHIN_SEC = 60;
-    const GPS_STALE_SEC = 30;
-    const POLYLINE_MAX_POINTS = 50;
-
-    const API_BASE = "https://projects.nakayamairon.com/ncs85283278/NIW_GPS/api/index.php";
-
-    // Initialize map
-    const map = L.map('map').setView([33.2109, 130.0459], 15);
-
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap',
-      maxZoom: 19
-    }).addTo(map);
-
-    const nodeColors = [
-      '#2563eb', '#dc2626', '#059669', '#d97706', '#7c3aed',
-      '#db2777', '#0891b2', '#ea580c', '#0284c7', '#65a30d'
-    ];
-
-    const nodes = {};
-
-    // Toggle panel for mobile
-    const toggleBtn = document.getElementById('toggleBtn');
-    const bottomPanel = document.getElementById('bottomPanel');
-    const toggleText = document.getElementById('toggleText');
-    let panelVisible = true;
-
-    toggleBtn.addEventListener('click', () => {
-      panelVisible = !panelVisible;
-      bottomPanel.classList.toggle('collapsed');
-      toggleText.textContent = panelVisible ? 'パネルを隠す' : 'パネルを表示';
-      
-      setTimeout(() => {
-        map.invalidateSize();
-      }, 300);
-    });
-
-    function createCustomIcon(nodeId, color) {
-      return L.divIcon({
-        className: 'custom-marker',
-        html: `<div style="
-          background:${color};
-          width:38px;height:38px;border-radius:6px;
-          border:3px solid white;
-          box-shadow:0 3px 12px rgba(0,0,0,0.25);
-          display:flex;align-items:center;justify-content:center;
-          color:white;font-weight:700;font-size:14px;
-          font-family:'Noto Sans JP',sans-serif;
-        ">${nodeId}</div>`,
-        iconSize: [38, 38],
-        iconAnchor: [19, 19]
-      });
-    }
-
-    function ensureNode(nodeId) {
-      if (!nodes[nodeId]) {
-        const idx = Object.keys(nodes).length;
-        nodes[nodeId] = {
-          marker: null,
-          polyline: null,
-          coordinates: [],
-          color: nodeColors[idx % nodeColors.length]
-        };
-      }
-      return nodes[nodeId];
-    }
-
-    function updateNodeMarker(nodeId, lat, lon, popupHtml, isStale) {
-      const node = ensureNode(nodeId);
-
-      node.coordinates.push([lat, lon]);
-      if (node.coordinates.length > POLYLINE_MAX_POINTS) node.coordinates.shift();
-
-      const color = isStale ? '#94a3b8' : node.color;
-      const icon = createCustomIcon(nodeId, color);
-
-      if (node.marker) {
-        node.marker.setLatLng([lat, lon]);
-        node.marker.setIcon(icon);
-      } else {
-        node.marker = L.marker([lat, lon], { icon }).addTo(map);
-        node.marker.bindPopup(popupHtml);
-
-        const markerCount = Object.values(nodes).filter(n => n.marker).length;
-        if (markerCount === 1) map.setView([lat, lon], 15);
-      }
-
-      if (node.polyline) {
-        node.polyline.setLatLngs(node.coordinates);
-        node.polyline.setStyle({ color: color });
-      } else {
-        node.polyline = L.polyline(node.coordinates, {
-          color: color,
-          weight: 3,
-          opacity: 0.7,
-          dashArray: '8, 6'
-        }).addTo(map);
-      }
-
-      node.marker.getPopup().setContent(popupHtml);
-    }
-
-    function removeNodeMarker(nodeId) {
-      const node = nodes[nodeId];
-      if (!node) return;
-      if (node.marker) { map.removeLayer(node.marker); node.marker = null; }
-      if (node.polyline) { map.removeLayer(node.polyline); node.polyline = null; }
-      node.coordinates = [];
-    }
-
-    function formatAgeSec(sec) {
-      if (sec < 60) return `${sec}秒前`;
-      const m = Math.floor(sec / 60);
-      const s = sec % 60;
-      if (m < 60) return `${m}分${s}秒前`;
-      const h = Math.floor(m / 60);
-      const min = m % 60;
-      return `${h}時間${min}分前`;
-    }
-
-    async function fetchNodesAndRender() {
-      try {
-        const res = await fetch(`${API_BASE}/nodes?within=${ONLINE_WITHIN_SEC}`);
-        if (!res.ok) throw new Error('Failed /nodes');
-        const payload = await res.json();
-
-        const listEl = document.getElementById('statusList');
-        const emptyEl = document.getElementById('emptyState');
-        
-        listEl.innerHTML = '';
-
-        let total = payload.count || 0;
-        let onlineCount = 0;
-        let noGpsCount = 0;
-
-        const now = Date.now();
-
-        if (payload.data.length === 0) {
-          emptyEl.style.display = 'block';
-          listEl.style.display = 'none';
-        } else {
-          emptyEl.style.display = 'none';
-          listEl.style.display = '';
-
-          payload.data.forEach(row => {
-            const nodeId = row.node_id;
-            const online = !!row.online;
-            if (online) onlineCount++;
-
-            const hasGps = !!row.has_gps;
-            const gpsTs = row.gps_timestamp ? new Date(row.gps_timestamp).getTime() : null;
-            const lastSeenTs = row.last_seen ? new Date(row.last_seen).getTime() : null;
-
-            const gpsAgeSec = gpsTs ? Math.max(0, Math.floor((now - gpsTs) / 1000)) : null;
-            const lastSeenAgeSec = lastSeenTs ? Math.max(0, Math.floor((now - lastSeenTs) / 1000)) : null;
-
-            const lastGateway = row.last_gateway ?? '-';
-            const senderMac = row.last_sender_mac ?? '-';
-
-            const gpsStale = hasGps && gpsAgeSec !== null && gpsAgeSec > GPS_STALE_SEC;
-            const noGpsOrBad = (!hasGps) || (online && gpsStale);
-            if (noGpsOrBad) noGpsCount++;
-
-            const card = document.createElement('div');
-            card.className = `card ${online ? 'online' : ''}`;
-            
-            let warningHtml = '';
-            if (!hasGps) {
-              warningHtml = '<div class="warning-box"><span>⚠️</span><span class="warning-text">GPS信号を受信していません</span></div>';
-            } else if (online && gpsStale) {
-              warningHtml = '<div class="warning-box"><span>⚠️</span><span class="warning-text">GPS情報が古い可能性があります</span></div>';
-            }
-
-            card.innerHTML = `
-              <div class="card-header">
-                <div class="card-title">ノード ${nodeId}</div>
-                <div class="status-badge ${online ? 'status-online' : 'status-offline'}">
-                  ${online ? '● オンライン' : '○ オフライン'}
-                </div>
-              </div>
-              
-              <div class="card-grid">
-                <div class="card-row">
-                  <span class="card-label">最終確認</span>
-                  <span class="card-value time-ago">
-                    ${lastSeenAgeSec !== null ? formatAgeSec(lastSeenAgeSec) : '-'}
-                  </span>
-                </div>
-                
-                <div class="card-row">
-                  <span class="card-label">ゲートウェイ</span>
-                  <span class="card-value">${lastGateway}</span>
-                </div>
-                
-                <div class="card-row">
-                  <span class="card-label">送信元MAC</span>
-                  <span class="card-value mono">${senderMac}</span>
-                </div>
-                
-                ${hasGps ? `
-                  <div class="card-row">
-                    <span class="card-label">GPS座標</span>
-                    <span class="card-value gps-coords">${Number(row.latitude).toFixed(5)}, ${Number(row.longitude).toFixed(5)}</span>
-                  </div>
-                  <div class="card-row">
-                    <span class="card-label">GPS更新</span>
-                    <span class="card-value time-ago">${gpsAgeSec !== null ? formatAgeSec(gpsAgeSec) : '-'}</span>
-                  </div>
-                ` : ''}
-              </div>
-              
-              ${warningHtml}
-            `;
-            
-            listEl.appendChild(card);
-
-            if (hasGps) {
-              const lat = Number(row.latitude);
-              const lon = Number(row.longitude);
-
-              const popupHtml = `
-                <div style="font-size:13px;line-height:1.7;font-family:'Noto Sans JP',sans-serif;">
-                  <div style="font-weight:700;font-size:15px;margin-bottom:8px;color:#1a202c;">ノード ${nodeId}</div>
-                  <div style="margin-bottom:4px;">ステータス: <b>${online ? '● オンライン' : '○ オフライン'}</b></div>
-                  <div style="margin-bottom:4px;">ゲートウェイ: <b>${lastGateway}</b></div>
-                  <div style="margin-bottom:4px;">送信元MAC: <span class="mono">${senderMac}</span></div>
-                  <div style="margin-bottom:2px;">緯度: ${lat.toFixed(6)}</div>
-                  <div style="margin-bottom:8px;">経度: ${lon.toFixed(6)}</div>
-                  <div style="font-size:11px;color:#64748b;padding-top:6px;border-top:1px solid #e2e8f0;">
-                    GPS更新: ${row.gps_timestamp ? new Date(row.gps_timestamp).toLocaleString('ja-JP') : '-'}
-                  </div>
-                </div>
-              `;
-
-              updateNodeMarker(nodeId, lat, lon, popupHtml, (online && gpsStale));
-            } else {
-              removeNodeMarker(nodeId);
-            }
-          });
-        }
-
-        document.getElementById('badgeTotal').textContent = `合計: ${total}`;
-        document.getElementById('badgeOnline').textContent = `オンライン: ${onlineCount}`;
-        document.getElementById('badgeNoGps').textContent = `GPS無効: ${noGpsCount}`;
-
-      } catch (err) {
-        console.log('Fetch nodes error:', err);
-        document.getElementById('emptyState').innerHTML = '<div class="empty-state">データの読み込みに失敗しました。再試行中...</div>';
-        document.getElementById('emptyState').style.display = 'block';
-      }
-    }
-
-    fetchNodesAndRender();
-    setInterval(fetchNodesAndRender, 500);
-
-    window.addEventListener('resize', () => {
-      setTimeout(() => map.invalidateSize(), 150);
-    });
-    
-    setTimeout(() => map.invalidateSize(), 300);
-  </script>
 </body>
 
 </html>

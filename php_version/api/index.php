@@ -1,5 +1,8 @@
 <?php
 header('Content-Type: application/json; charset=utf-8');
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: GET, POST, DELETE, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type');
 
 function respond($data, int $status = 200): void {
   http_response_code($status);
@@ -226,5 +229,93 @@ if ($method === 'GET' && $path === '/nodes') {
 
   respond(['within_seconds' => $within, 'count' => count($rows), 'data' => $rows]);
 }
+
+// ===== GET /areas?id_area=123 =====
+if ($method === 'GET' && $path === '/areas') {
+  $id_area = isset($_GET['id_area']) ? (int)$_GET['id_area'] : 0;
+  if ($id_area <= 0) respond(['error' => 'Missing/invalid id_area'], 400);
+
+  $stmt = $conn->prepare("SELECT id, id_area, name, color, points, created_at, updated_at
+                          FROM area_shape
+                          WHERE id_area = ?
+                          ORDER BY id DESC");
+  if (!$stmt) respond(['error' => 'Prepare failed (area_shape)'], 500);
+
+  $stmt->bind_param("i", $id_area);
+  $stmt->execute();
+  $res = $stmt->get_result();
+
+  $rows = [];
+  while ($row = $res->fetch_assoc()) {
+    // points dari MySQL biasanya string JSON -> decode biar response tidak double-encoded
+    $row['points'] = json_decode($row['points'], true);
+    $rows[] = $row;
+  }
+  $stmt->close();
+
+  respond(['count' => count($rows), 'data' => $rows]);
+}
+
+// ===== POST /areas =====
+if ($method === 'POST' && $path === '/areas') {
+  $body = readJsonBody();
+
+  if (!isset($body['id_area'], $body['name'], $body['points'])) {
+    respond(['error' => 'Missing required fields (id_area, name, points)'], 400);
+  }
+
+  $id_area = (int)$body['id_area'];
+  $name = trim((string)$body['name']);
+  $color = isset($body['color']) ? (string)$body['color'] : null;
+  $points = $body['points'];
+
+  if ($id_area <= 0) respond(['error' => 'id_area must be > 0'], 400);
+  if ($name === '') respond(['error' => 'name is required'], 400);
+  if (!is_array($points) || count($points) < 3) respond(['error' => 'points must be an array with >= 3 items'], 400);
+
+  // Optional: validasi format tiap titik [lat,lng]
+  foreach ($points as $p) {
+    if (!is_array($p) || count($p) < 2 || !is_numeric($p[0]) || !is_numeric($p[1])) {
+      respond(['error' => 'Each point must be [lat, lng] numeric'], 400);
+    }
+  }
+
+  $pointsJson = json_encode($points, JSON_UNESCAPED_UNICODE);
+  if ($pointsJson === false) respond(['error' => 'Failed to encode points'], 400);
+
+  $q = "INSERT INTO area_shape (id_area, name, color, points)
+        VALUES (?, ?, ?, CAST(? AS JSON))";
+  $stmt = $conn->prepare($q);
+  if (!$stmt) respond(['error' => 'Prepare failed (area_shape insert)'], 500);
+
+  $stmt->bind_param("isss", $id_area, $name, $color, $pointsJson);
+
+  if (!$stmt->execute()) {
+    $stmt->close();
+    respond(['error' => 'Failed to insert area_shape'], 500);
+  }
+
+  $newId = $stmt->insert_id;
+  $stmt->close();
+
+  respond(['ok' => true, 'id' => $newId]);
+}
+
+// ===== DELETE /areas/{id} =====
+if ($method === 'DELETE' && preg_match('#^/areas/(\d+)$#', $path, $m)) {
+  $id = (int)$m[1];
+
+  $stmt = $conn->prepare("DELETE FROM area_shape WHERE id = ?");
+  if (!$stmt) respond(['error' => 'Prepare failed (area_shape delete)'], 500);
+
+  $stmt->bind_param("i", $id);
+  $stmt->execute();
+  $affected = $stmt->affected_rows;
+  $stmt->close();
+
+  if ($affected <= 0) respond(['error' => 'Area not found'], 404);
+  respond(['ok' => true]);
+}
+
 
 respond(['error' => 'Not found', 'path' => $path], 404);
