@@ -54,7 +54,7 @@ BeaconConfig myBeacons[] = {
   { "78:21:84:e0:e5:6a", 33.21088167, 130.04566862, 0, 0, 0, 0, 0 },
   { "6c:c8:40:8c:90:8e", 33.21105952, 130.04546544, 0, 0, 0, 0, 0 }
 };
-
+∏
 
   // Exponential Moving Average - Lebih responsif dari SMA
   float
