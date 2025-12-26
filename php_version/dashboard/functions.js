@@ -261,10 +261,34 @@ function updateAreaList() {
 
 function isPointInArea(lat, lon, areaId) {
     const area = savedAreas.find(a => a.id === areaId);
-    if (!area) return false;
+    if (!area || !area.polygon) return false;
 
-    // Leaflet punya method contains
-    return area.polygon.getBounds().contains([lat, lon]);
+    // Gunakan method containsLatLng dari Leaflet polygon
+    const latLng = L.latLng(lat, lon);
+
+    // Cek apakah point berada di dalam polygon
+    const polyLatLngs = area.polygon.getLatLngs()[0]; // Array of LatLng objects
+    let inside = false;
+
+    for (let i = 0, j = polyLatLngs.length - 1; i < polyLatLngs.length; j = i++) {
+        const xi = polyLatLngs[i].lat, yi = polyLatLngs[i].lng;
+        const xj = polyLatLngs[j].lat, yj = polyLatLngs[j].lng;
+
+        const intersect = ((yi > lon) !== (yj > lon))
+            && (lat < (xj - xi) * (lon - yi) / (yj - yi) + xi);
+        if (intersect) inside = !inside;
+    }
+
+    return inside;
+}
+
+function getAreaName(lat, lon) {
+    for (const area of savedAreas) {
+        if (isPointInArea(lat, lon, area.id)) {
+            return area.name;
+        }
+    }
+    return '-';
 }
 
 // Delete area
@@ -273,7 +297,13 @@ window.deleteArea = async function (id) {
     if (index === -1) return;
 
     try {
-        const res = await fetch(`${API_BASE}/areas/${id}`, { method: 'DELETE' });
+        const res = await fetch(`${API_BASE}/area_delete/${id}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
         if (!res.ok) throw new Error('Failed DELETE /areas/{id}');
 
         const area = savedAreas[index];
@@ -349,9 +379,6 @@ function updateNodeMarker(nodeId, lat, lon, popupHtml, isStale) {
             dashArray: '8, 6'
         }).addTo(map);
     }
-
-    console.log("1111", node);
-
 
     node.marker.getPopup().setContent(popupHtml);
 }
@@ -453,16 +480,20 @@ async function fetchNodesAndRender() {
                   <span class="card-value mono">${senderMac}</span>
                 </div>
                 
-                ${hasGps ? `
-                  <div class="card-row">
-                    <span class="card-label">GPS座標</span>
-                    <span class="card-value gps-coords">${Number(row.latitude).toFixed(5)}, ${Number(row.longitude).toFixed(5)}</span>
-                  </div>
-                  <div class="card-row">
-                    <span class="card-label">GPS更新</span>
-                    <span class="card-value time-ago">${gpsAgeSec !== null ? formatAgeSec(gpsAgeSec) : '-'}</span>
-                  </div>
-                ` : ''}
+${hasGps ? `
+  <div class="card-row">
+    <span class="card-label">GPS座標</span>
+    <span class="card-value gps-coords">${Number(row.latitude).toFixed(5)}, ${Number(row.longitude).toFixed(5)}</span>
+  </div>
+  <div class="card-row">
+    <span class="card-label">エリア</span>
+    <span class="card-value" style="font-weight:600;color:#2563eb;">${getAreaName(Number(row.latitude), Number(row.longitude))}</span>
+  </div>
+  <div class="card-row">
+    <span class="card-label">GPS更新</span>
+    <span class="card-value time-ago">${gpsAgeSec !== null ? formatAgeSec(gpsAgeSec) : '-'}</span>
+  </div>
+` : ''}
               </div>
               
               ${warningHtml}
@@ -474,19 +505,22 @@ async function fetchNodesAndRender() {
                     const lat = Number(row.latitude);
                     const lon = Number(row.longitude);
 
-                    const popupHtml = `
-                <div style="font-size:13px;line-height:1.7;font-family:'Noto Sans JP',sans-serif;">
-                  <div style="font-weight:700;font-size:15px;margin-bottom:8px;color:#1a202c;">ノード ${nodeId}</div>
-                  <div style="margin-bottom:4px;">ステータス: <b>${online ? '● オンライン' : '○ オフライン'}</b></div>
-                  <div style="margin-bottom:4px;">ゲートウェイ: <b>${lastGateway}</b></div>
-                  <div style="margin-bottom:4px;">送信元MAC: <span class="mono">${senderMac}</span></div>
-                  <div style="margin-bottom:2px;">緯度: ${lat.toFixed(6)}</div>
-                  <div style="margin-bottom:8px;">経度: ${lon.toFixed(6)}</div>
-                  <div style="font-size:11px;color:#64748b;padding-top:6px;border-top:1px solid #e2e8f0;">
-                    GPS更新: ${row.gps_timestamp ? new Date(row.gps_timestamp).toLocaleString('ja-JP') : '-'}
-                  </div>
-                </div>
-              `;
+const areaName = getAreaName(lat, lon);
+
+const popupHtml = `
+  <div style="font-size:13px;line-height:1.7;font-family:'Noto Sans JP',sans-serif;">
+    <div style="font-weight:700;font-size:15px;margin-bottom:8px;color:#1a202c;">ノード ${nodeId}</div>
+    <div style="margin-bottom:4px;">ステータス: <b>${online ? '● オンライン' : '○ オフライン'}</b></div>
+    <div style="margin-bottom:4px;">エリア: <b style="color:#2563eb;">${areaName}</b></div>
+    <div style="margin-bottom:4px;">ゲートウェイ: <b>${lastGateway}</b></div>
+    <div style="margin-bottom:4px;">送信元MAC: <span class="mono">${senderMac}</span></div>
+    <div style="margin-bottom:2px;">緯度: ${lat.toFixed(6)}</div>
+    <div style="margin-bottom:8px;">経度: ${lon.toFixed(6)}</div>
+    <div style="font-size:11px;color:#64748b;padding-top:6px;border-top:1px solid #e2e8f0;">
+      GPS更新: ${row.gps_timestamp ? new Date(row.gps_timestamp).toLocaleString('ja-JP') : '-'}
+    </div>
+  </div>
+`;
 
                     updateNodeMarker(nodeId, lat, lon, popupHtml, (online && gpsStale));
                 } else {

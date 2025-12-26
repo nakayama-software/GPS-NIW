@@ -302,8 +302,8 @@ if ($method === 'POST' && $path === '/areas') {
 }
 
 // ===== DELETE /areas/{id} =====
-if ($method === 'DELETE' && preg_match('#^/areas/(\d+)$#', $path, $m)) {
-  $id = (int)$m[1];
+if ($method === 'POST' && $path === '/area_delete') {
+  $id = 1;
 
   $stmt = $conn->prepare("DELETE FROM area_shape WHERE id = ?");
   if (!$stmt) respond(['error' => 'Prepare failed (area_shape delete)'], 500);
