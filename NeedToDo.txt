@@ -10,3 +10,4 @@ Turunkan polling dashboard jadi 1–2s
 
 --------------
 ✅
+x
