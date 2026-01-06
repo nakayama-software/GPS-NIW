@@ -288,6 +288,8 @@ body {
     display: flex;
     flex-direction: column;
     gap: 6px;
+    max-height: 90px;
+    overflow: auto;
 }
 
 .area-item {
@@ -597,17 +599,25 @@ body {
 }
 
 /* Tablet and Desktop */
+/* Tablet and Desktop */
 @media (min-width: 768px) {
     .header {
         display: block;
     }
 
+    /* 1. MUNCULKAN TOMBOL TOGGLE */
     .toggle-panel {
-        display: none !important;
+        display: block !important; /* Paksa muncul */
+        top: 80px;                 /* Posisi di bawah header */
+        right: 20px;               /* Di pojok kanan */
+        left: auto;
+        width: auto;
+        z-index: 1000;
     }
 
+    /* 2. GESER AREA CONTROLS KE BAWAH (Agar tidak tertumpuk tombol toggle) */
     .area-controls {
-        top: 80px;
+        top: 130px; 
         right: 20px;
     }
 
@@ -624,11 +634,20 @@ body {
         border-right: 2px solid #e2e8f0;
         box-shadow: 2px 0 12px rgba(0, 0, 0, 0.06);
         order: -1;
+        /* Tambahkan transisi properti width & opacity agar halus */
+        transition: width 0.3s ease, min-width 0.3s ease, padding 0.3s ease, opacity 0.2s ease;
+        opacity: 1;
     }
 
+    /* 3. LOGIKA COLLAPSED KHUSUS DESKTOP */
     .bottom-panel.collapsed {
-        max-height: none;
-        width: 20%;
+        max-height: none;      /* Reset height mobile */
+        width: 0 !important;   /* Lebar jadi 0 */
+        min-width: 0 !important; 
+        padding: 0 !important; /* Hilangkan padding agar bersih */
+        border: none;
+        opacity: 0;            /* Hilangkan visual konten */
+        overflow: hidden;
     }
 
     #map {
@@ -636,6 +655,7 @@ body {
         width: auto;
     }
 
+    /* ... sisa style desktop lainnya tetap sama ... */
     .panel-header {
         padding: 16px 18px;
     }
@@ -658,57 +678,7 @@ body {
         padding: 14px;
     }
 
-    .card {
-        padding: 14px;
-        font-size: 12px;
-    }
-
-    .badge {
-        font-size: 11px;
-        padding: 5px 11px;
-    }
-
-    .card-row {
-        grid-template-columns: 95px 1fr;
-        font-size: 12px;
-        gap: 8px;
-    }
-
-    .card-label,
-    .card-value {
-        font-size: 12px;
-    }
-
-    .card-title {
-        font-size: 14px;
-    }
-
-    .status-badge {
-        font-size: 10px;
-        padding: 3px 8px;
-    }
-
-    .panel-heading {
-        font-size: 14px;
-    }
-
-    .warning-text,
-    .gps-coords {
-        font-size: 11px;
-    }
-
-    .time-ago {
-        font-size: 10px;
-    }
-
-    .mono {
-        font-size: 10px;
-    }
-
-    .card-header {
-        margin-bottom: 10px;
-        padding-bottom: 8px;
-    }
+    /* ... dst ... */
 }
 
 @media (min-width: 1024px) {

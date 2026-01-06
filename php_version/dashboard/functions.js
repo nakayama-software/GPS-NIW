@@ -285,10 +285,43 @@ function isPointInArea(lat, lon, areaId) {
 function getAreaName(lat, lon) {
     for (const area of savedAreas) {
         if (isPointInArea(lat, lon, area.id)) {
-            return area.name;
+            return area.name; 
         }
     }
-    return '-';
+
+    const currentLoc = L.latLng(lat, lon);
+    
+    const distances = savedAreas.map(area => {
+        const center = getAreaCenter(area.points);
+        if (!center) return { name: area.name, dist: 999999 };
+        
+        const dist = map.distance(currentLoc, L.latLng(center.lat, center.lng));
+        return { name: area.name, dist: dist };
+    });
+
+    distances.sort((a, b) => a.dist - b.dist);
+
+    const nearest = distances[0];
+    const secondNearest = distances[1];
+
+    const NEAR_LIMIT = 100;    
+    const FAR_LIMIT = 600;    
+
+    if (!nearest) return '-';
+
+    if (nearest.dist <= NEAR_LIMIT) {
+        return `${nearest.name} 付近`;
+    }
+
+    if (nearest.dist <= FAR_LIMIT && secondNearest && secondNearest.dist <= FAR_LIMIT) {
+        return `${nearest.name} と ${secondNearest.name} の間`;
+    }
+
+    if (nearest.dist <= FAR_LIMIT) {
+        return `${nearest.name} あたり`;
+    }
+
+    return 'Di luar area';
 }
 
 // Delete area
@@ -401,6 +434,24 @@ function formatAgeSec(sec) {
     return `${h}時間${min}分前`;
 }
 
+// Menghitung titik tengah (center) dari array coordinates polygon
+function getAreaCenter(points) {
+    if (!points || points.length === 0) return null;
+    
+    let latSum = 0;
+    let lngSum = 0;
+    
+    points.forEach(p => {
+        latSum += p[0];
+        lngSum += p[1];
+    });
+    
+    return {
+        lat: latSum / points.length,
+        lng: lngSum / points.length
+    };
+}
+
 async function fetchNodesAndRender() {
     try {
         const res = await fetch(`${API_BASE}/nodes?within=${ONLINE_WITHIN_SEC}`);
@@ -412,20 +463,30 @@ async function fetchNodesAndRender() {
 
         listEl.innerHTML = '';
 
-        let total = payload.count || 0;
+        const now = Date.now();
+        const MAX_LAST_SEEN_MS = 5 * 60 * 1000; // 5 menit dalam milliseconds
+
+        // Filter hanya node yang last_seen < 5 menit
+        const filteredData = (payload.data || []).filter(row => {
+            const lastSeenTs = row.last_seen ? new Date(row.last_seen).getTime() : null;
+            if (!lastSeenTs) return false; // Skip jika tidak ada last_seen
+
+            const lastSeenAge = now - lastSeenTs;
+            return lastSeenAge < MAX_LAST_SEEN_MS; // Hanya tampilkan jika < 5 menit
+        });
+
+        let total = filteredData.length;
         let onlineCount = 0;
         let noGpsCount = 0;
 
-        const now = Date.now();
-
-        if (payload.data.length === 0) {
+        if (filteredData.length === 0) {
             emptyEl.style.display = 'block';
             listEl.style.display = 'none';
         } else {
             emptyEl.style.display = 'none';
             listEl.style.display = '';
 
-            payload.data.forEach(row => {
+            filteredData.forEach(row => {
                 const nodeId = row.node_id;
                 const online = !!row.online;
                 if (online) onlineCount++;
@@ -446,6 +507,37 @@ async function fetchNodesAndRender() {
 
                 const card = document.createElement('div');
                 card.className = `card ${online ? 'online' : ''}`;
+
+                // === TAMBAHKAN BAGIAN INI (MULAI) ===
+                // Cek apakah node memiliki koordinat GPS
+                if (hasGps) {
+                    // Ubah kursor jadi telunjuk agar terlihat bisa diklik
+                    card.style.cursor = 'pointer';
+
+                    card.onclick = () => {
+                        const lat = Number(row.latitude);
+                        const lon = Number(row.longitude);
+
+                        // 1. Gerakkan peta ke lokasi node (Zoom level 18)
+                        map.flyTo([lat, lon], 19, {
+                            animate: true,
+                            duration: 1.5 // Durasi animasi dalam detik
+                        });
+
+                        // 2. Buka popup marker yang sesuai (Opsional, agar user langsung tahu lokasinya)
+                        const nodeData = nodes[nodeId];
+                        if (nodeData && nodeData.marker) {
+                            nodeData.marker.openPopup();
+                        }
+
+                        // 3. Khusus Mobile: Tutup panel otomatis agar peta terlihat
+                        if (window.innerWidth < 768 && panelVisible) {
+                            toggleBtn.click();
+                        }
+                    };
+                }
+                // === TAMBAHKAN BAGIAN INI (SELESAI) ===
+
 
                 let warningHtml = '';
                 if (!hasGps) {
@@ -505,9 +597,9 @@ ${hasGps ? `
                     const lat = Number(row.latitude);
                     const lon = Number(row.longitude);
 
-const areaName = getAreaName(lat, lon);
+                    const areaName = getAreaName(lat, lon);
 
-const popupHtml = `
+                    const popupHtml = `
   <div style="font-size:13px;line-height:1.7;font-family:'Noto Sans JP',sans-serif;">
     <div style="font-weight:700;font-size:15px;margin-bottom:8px;color:#1a202c;">ノード ${nodeId}</div>
     <div style="margin-bottom:4px;">ステータス: <b>${online ? '● オンライン' : '○ オフライン'}</b></div>

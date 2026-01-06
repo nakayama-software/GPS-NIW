@@ -1,0 +1,12 @@
+Tambah auth sederhana (API key) + rotate DB password 
+
+Refactor gateway queue: buang vector, pakai ring buffer/RTOS queue 
+
+Stop channel hopping kalau semua gateway 1 channel 
+
+Gunakan seq untuk anti out-of-order 
+
+Turunkan polling dashboard jadi 1–2s 
+
+--------------
+✅
