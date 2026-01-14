@@ -7,7 +7,7 @@
 #include <esp_wifi.h>
 #include <TinyGPSPlus.h>
 
-#define DEVICE_ID      1
+#define DEVICE_ID      5
 
 // ===== Adaptive intervals (optional - bisa diset sama semua) =====
 #define SEND_INTERVAL_MOVING    500   // 500ms when moving
