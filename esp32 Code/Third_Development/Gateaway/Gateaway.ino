@@ -10,11 +10,20 @@
 #include <ArduinoJson.h>
 
 // * Gateway ID *
-const char* GATEWAY_ID = "GW-01";
+// Third Floor
+// const char* GATEWAY_ID = "GW-01"; 
+// const char* ssid = "Niw_3Fg";
+// const char* pass = "niw041713f";
 
-// * Wi-Fi lock *
-const char* ssid = "Niw_3Fg";
-const char* pass = "niw041713f";
+// Daisan
+// const char* GATEWAY_ID = "GW-02";
+// const char* ssid = "NiwSouko3";
+// const char* pass = "niw04171s3";
+
+// Front Factory
+const char* GATEWAY_ID = "GW-03";
+const char* ssid = "Niw2ndFactory";
+const char* pass = "niw04171k2";
 
 #define ESPNOW_CH 11
 uint8_t AP_BSSID[6] = { 0xCC, 0xE1, 0xD5, 0xC5, 0x6D, 0x40 };
@@ -164,7 +173,8 @@ void setup() {
   WiFi.disconnect(false, true);
   delay(200);
 
-  WiFi.begin(ssid, pass, ESPNOW_CH, AP_BSSID, true);
+  // WiFi.begin(ssid, pass, ESPNOW_CH, AP_BSSID, true);
+   WiFi.begin(ssid, pass);
 
   Serial.print("[WIFI] Connecting");
   unsigned long t0 = millis();

@@ -52,7 +52,7 @@ static bool readGpsFix(double &lat, double &lon) {
 
 // ===== ESP NOW Section =====
 // *Channel hopping list*
-static const uint8_t HOP_CHANNELS[] = { 2, 6, 11 };
+static const uint8_t HOP_CHANNELS[] = { 2, 6, 8, 11 };
 static const size_t HOP_COUNT = sizeof(HOP_CHANNELS) / sizeof(HOP_CHANNELS[0]);
 
 #define HOP_SETTLE_MS 3
