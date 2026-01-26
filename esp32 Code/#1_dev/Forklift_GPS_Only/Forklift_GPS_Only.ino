@@ -6,6 +6,7 @@
 #include <esp_wifi.h>
 
 #include <TinyGPSPlus.h>
+#include <math.h>
 
 #define DEVICE_ID 1
 #define SEND_INTERVAL 500
@@ -45,9 +46,76 @@ static bool readGpsFix(double &lat, double &lon) {
   if (gps.location.isValid() && gps.location.age() < 5000) {
     lat = gps.location.lat();
     lon = gps.location.lng();
+  
+    Serial.print("Latitude: ");
+    Serial.println(gps.location.lat());
+    Serial.print("Longitude: ");
+    Serial.println(gps.location.lng());
+    Serial.print("Satellites: ");
+    Serial.println(gps.satellites.value());  // Shows total satellites, including QZSS
+
+
     return true;
   }
   return false;
+}
+
+static void printGpsClock() {
+  // Pastikan data waktu & tanggal valid
+  if (gps.date.isValid() && gps.time.isValid() && gps.date.age() < 5000 && gps.time.age() < 5000) {
+
+    int y = gps.date.year();
+    int mo = gps.date.month();
+    int d = gps.date.day();
+
+    int hh = gps.time.hour();
+    int mm = gps.time.minute();
+    int ss = gps.time.second();
+    int cs = gps.time.centisecond();  // 0..99
+
+    // Print UTC
+    Serial.printf("[CLOCK][UTC] %04d-%02d-%02d %02d:%02d:%02d.%02d\n",
+                  y, mo, d, hh, mm, ss, cs);
+
+    // (Opsional) Contoh konversi ke WIB (UTC+7)
+    // Ubah offsetHours menjadi 8 untuk WITA, 9 untuk WIT
+    const int offsetHours = 7;
+    int l_hh = hh + offsetHours;
+    int l_d = d, l_mo = mo, l_y = y;
+
+    // Normalisasi jam (handle lewat tengah malam)
+    while (l_hh >= 24) {
+      l_hh -= 24;
+      l_d += 1;
+
+      // Normalisasi tanggal sederhana (cukup untuk penggunaan harian)
+      // Jika ingin super-robust (kabisat), bilang ya—aku bikinkan fungsi lengkap.
+      int dim;
+      if (l_mo == 1 || l_mo == 3 || l_mo == 5 || l_mo == 7 || l_mo == 8 || l_mo == 10 || l_mo == 12)
+        dim = 31;
+      else if (l_mo == 4 || l_mo == 6 || l_mo == 9 || l_mo == 11)
+        dim = 30;
+      else {
+        // Februari (kabisat)
+        bool leap = ((l_y % 4 == 0 && l_y % 100 != 0) || (l_y % 400 == 0));
+        dim = leap ? 29 : 28;
+      }
+
+      if (l_d > dim) {
+        l_d = 1;
+        l_mo += 1;
+        if (l_mo > 12) {
+          l_mo = 1;
+          l_y += 1;
+        }
+      }
+    }
+
+    Serial.printf("[CLOCK][WIB] %04d-%02d-%02d %02d:%02d:%02d.%02d\n",
+                  l_y, l_mo, l_d, l_hh, mm, ss, cs);
+  } else {
+    Serial.println("[CLOCK] TIME INVALID (waiting GPS time/date...)");
+  }
 }
 
 // ===== ESP NOW Section =====
@@ -95,7 +163,7 @@ void setup() {
     Serial.println("[SENDER] ESP-NOW init failed");
     return;
   }
-  
+
   esp_now_register_send_cb(onSent);
 
   esp_now_peer_info_t peer = {};
@@ -122,6 +190,8 @@ void setup() {
 void loop() {
   double lat = 0, lon = 0;
   bool gpsValid = readGpsFix(lat, lon);
+
+  printGpsClock();
 
   pkt.seq = ++seqNo;
 
